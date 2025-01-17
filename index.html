@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Building-top WebAR Experience</title>
+    <title>AR Building Finder</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- Add Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
+        #map {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            z-index: 999;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+
         .arjs-loader {
             position: fixed;
             z-index: 999;
@@ -29,9 +43,9 @@
             padding: 20px;
         }
 
-        #distance-display {
+        #info-display {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
@@ -39,11 +53,31 @@
             padding: 10px;
             border-radius: 5px;
             z-index: 999;
+            text-align: center;
+        }
+
+        #compass {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #compass-arrow {
+            width: 40px;
+            height: 40px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2L8 12H16L12 2Z"/></svg>') no-repeat center;
         }
     </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
-    <!-- Loading screen -->
     <div class="arjs-loader">
         <div>
             Loading AR Experience...<br/>
@@ -51,35 +85,30 @@
         </div>
     </div>
 
-    <!-- Distance display -->
-    <div id="distance-display">Initializing location...</div>
+    <div id="map"></div>
+    <div id="info-display">Initializing...</div>
+    <div id="compass"><div id="compass-arrow"></div></div>
 
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs='sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960; trackingMethod: best;'
+        arjs='sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;'
     >
-        <!-- Camera with GPS capabilities -->
         <a-camera gps-camera rotation-reader></a-camera>
 
-        <!-- REPLACE THESE COORDINATES WITH YOUR BUILDING'S COORDINATES -->
-        <!-- You can get coordinates from Google Maps by right-clicking on your location -->
+        <!-- Target Building Marker - Updated scale to 30 -->
         <a-entity
             gps-entity-place="latitude: YOUR_LATITUDE; longitude: YOUR_LONGITUDE;"
-            position="0 0 0"
         >
-            <!-- 3D model on top of building -->
             <a-box
                 color="red"
-                scale="20 20 20"
+                scale="30 30 30"
                 position="0 50 0"
                 animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true"
             ></a-box>
-
-            <!-- Text label -->
             <a-text
-                value="AR Marker"
-                scale="20 20 20"
+                value="Target Building"
+                scale="30 30 30"
                 position="0 80 0"
                 align="center"
                 color="white"
@@ -88,38 +117,70 @@
     </a-scene>
 
     <script>
-        // Hide loader when scene is loaded
-        window.addEventListener('load', () => {
-            const scene = document.querySelector('a-scene');
-            const loader = document.querySelector('.arjs-loader');
-            const distanceDisplay = document.getElementById('distance-display');
-            
-            scene.addEventListener('loaded', () => {
-                loader.style.display = 'none';
+        // Initialize map and variables
+        let map;
+        let userMarker;
+        let targetMarker;
+        let userPosition = null;
+        const TARGET_LAT = 53.82309893;  // Replace with your building's latitude
+        const TARGET_LON = -1.579156441; // Replace with your building's longitude
+
+        function initMap() {
+            map = L.map('map').setView([TARGET_LAT, TARGET_LON], 17);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add target building marker
+            targetMarker = L.marker([TARGET_LAT, TARGET_LON], {
+                icon: L.divIcon({
+                    className: 'target-marker',
+                    html: '🎯',
+                    iconSize: [30, 30]
+                })
+            }).addTo(map);
+            targetMarker.bindPopup("Target Building");
+
+            // Initialize user position marker
+            userMarker = L.marker([0, 0], {
+                icon: L.divIcon({
+                    className: 'user-marker',
+                    html: '📍',
+                    iconSize: [30, 30]
+                })
             });
+        }
 
-            // Update distance information
-            if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition((position) => {
-                    const targetLat = 53.823130388709174; // Replace with your building's latitude
-                    const targetLon = -1.5791568210468607; // Replace with your building's longitude
-                    
-                    // Calculate distance
-                    const distance = calculateDistance(
-                        position.coords.latitude,
-                        position.coords.longitude,
-                        targetLat,
-                        targetLon
-                    );
-                    
-                    distanceDisplay.textContent = `Distance to target: ${distance.toFixed(2)} meters`;
-                });
-            }
-        });
+        function updateMap(position) {
+            const { latitude, longitude } = position.coords;
+            userPosition = { lat: latitude, lng: longitude };
 
-        // Function to calculate distance between two points
+            // Update user marker
+            userMarker.setLatLng([latitude, longitude]).addTo(map);
+
+            // Center map between user and target
+            const bounds = L.latLngBounds([
+                [latitude, longitude],
+                [TARGET_LAT, TARGET_LON]
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+
+            // Update distance and bearing
+            const distance = calculateDistance(latitude, longitude, TARGET_LAT, TARGET_LON);
+            const bearing = calculateBearing(latitude, longitude, TARGET_LAT, TARGET_LON);
+            
+            // Update info display
+            document.getElementById('info-display').innerHTML = `
+                Distance to target: ${distance.toFixed(0)}m<br>
+                Direction: ${getCardinalDirection(bearing)}
+            `;
+
+            // Update compass
+            updateCompass(bearing);
+        }
+
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Earth's radius in meters
+            const R = 6371e3;
             const φ1 = lat1 * Math.PI/180;
             const φ2 = lat2 * Math.PI/180;
             const Δφ = (lat2-lat1) * Math.PI/180;
@@ -132,6 +193,60 @@
 
             return R * c;
         }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const λ1 = lon1 * Math.PI/180;
+            const λ2 = lon2 * Math.PI/180;
+
+            const y = Math.sin(λ2-λ1) * Math.cos(φ2);
+            const x = Math.cos(φ1) * Math.sin(φ2) -
+                    Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2-λ1);
+            const θ = Math.atan2(y, x);
+            
+            return (θ*180/Math.PI + 360) % 360;
+        }
+
+        function getCardinalDirection(bearing) {
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index];
+        }
+
+        function updateCompass(bearing) {
+            const arrow = document.getElementById('compass-arrow');
+            arrow.style.transform = `rotate(${bearing}deg)`;
+        }
+
+        // Initialize everything when the page loads
+        window.addEventListener('load', () => {
+            initMap();
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition(updateMap, 
+                    (error) => {
+                        console.error('Error getting location:', error);
+                        document.getElementById('info-display').textContent = 
+                            'Error getting location. Please enable GPS.';
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000
+                    }
+                );
+            } else {
+                document.getElementById('info-display').textContent = 
+                    'Geolocation is not supported by your browser';
+            }
+
+            // Hide loader when scene is loaded
+            const scene = document.querySelector('a-scene');
+            scene.addEventListener('loaded', () => {
+                document.querySelector('.arjs-loader').style.display = 'none';
+            });
+        });
     </script>
 </body>
 </html>
