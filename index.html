@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
+        /* Previous styles remain the same */
         #map {
             position: fixed;
             bottom: 20px;
@@ -96,34 +97,45 @@
     >
         <a-camera gps-camera rotation-reader></a-camera>
 
-        <!-- Target Building Marker - Updated scale to 30 -->
+        <!-- Target Building Marker - Increased scale and height -->
         <a-entity
-            gps-entity-place="latitude: 53.82309893; longitude: -1.579156441;"
+            gps-entity-place="latitude: YOUR_LATITUDE; longitude: YOUR_LONGITUDE;"
         >
+            <!-- Larger red box positioned 20 meters up -->
             <a-box
                 color="red"
-                scale="30 30 30"
-                position="0 50 0"
+                scale="100 100 100"
+                position="0 20 0"
                 animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true"
             ></a-box>
+            
+            <!-- Added a vertical line for better visibility -->
+            <a-box
+                color="yellow"
+                scale="5 40 5"
+                position="0 10 0"
+            ></a-box>
+            
+            <!-- Larger text positioned above the box -->
             <a-text
                 value="Target Building"
-                scale="30 30 30"
-                position="0 80 0"
+                scale="100 100 100"
+                position="0 40 0"
                 align="center"
                 color="white"
             ></a-text>
         </a-entity>
     </a-scene>
 
+    <!-- Previous JavaScript remains the same -->
     <script>
         // Initialize map and variables
         let map;
         let userMarker;
         let targetMarker;
         let userPosition = null;
-        const TARGET_LAT = 53.82309893;  // Replace with your building's latitude
-        const TARGET_LON = -1.579156441; // Replace with your building's longitude
+        const TARGET_LAT = 53.8320;  // Replace with your building's latitude
+        const TARGET_LON = -1.5791; // Replace with your building's longitude
 
         function initMap() {
             map = L.map('map').setView([TARGET_LAT, TARGET_LON], 17);
@@ -169,16 +181,18 @@
             const distance = calculateDistance(latitude, longitude, TARGET_LAT, TARGET_LON);
             const bearing = calculateBearing(latitude, longitude, TARGET_LAT, TARGET_LON);
             
-            // Update info display
+            // Update info display with more detailed information
             document.getElementById('info-display').innerHTML = `
                 Distance to target: ${distance.toFixed(0)}m<br>
-                Direction: ${getCardinalDirection(bearing)}
+                Direction: ${getCardinalDirection(bearing)}<br>
+                Look up to see the marker!
             `;
 
             // Update compass
             updateCompass(bearing);
         }
 
+        // Previous calculation functions remain the same
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
             const φ1 = lat1 * Math.PI/180;
