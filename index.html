@@ -1,266 +1,29 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>AR Building Finder</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <!-- Add Leaflet CSS and JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <style>
-        /* Previous styles remain the same */
-        #map {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
-            z-index: 999;
-            border-radius: 10px;
-            border: 2px solid white;
-        }
-
-        .arjs-loader {
-            position: fixed;
-            z-index: 999;
-            overflow: show;
-            margin: auto;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .arjs-loader div {
-            text-align: center;
-            font-size: 1.25em;
-            color: white;
-            padding: 20px;
-        }
-
-        #info-display {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 999;
-            text-align: center;
-        }
-
-        #compass {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #compass-arrow {
-            width: 40px;
-            height: 40px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2L8 12H16L12 2Z"/></svg>') no-repeat center;
-        }
-    </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <div class="arjs-loader">
-        <div>
-            Loading AR Experience...<br/>
-            Please allow camera and location access when prompted.
-        </div>
-    </div>
-
-    <div id="map"></div>
-    <div id="info-display">Initializing...</div>
-    <div id="compass"><div id="compass-arrow"></div></div>
-
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Geospatial WebAR with Red Box</title>
+    <!-- Include A-Frame Library -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- Include AR.js for A-Frame -->
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.0.0/aframe/build/aframe-ar.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
     <a-scene
-        vr-mode-ui="enabled: false"
-        embedded
-        arjs='sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;'
+      vr-mode-ui="enabled: false"
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"
     >
-        <a-camera gps-camera rotation-reader></a-camera>
+      <!-- Red Box at a Specific Location -->
+      <a-box
+        gps-entity-place="latitude: 53.823089356176666; longitude:  -1.578970486767208;"
+        material="color: red;"
+        scale="1 1 1"
+      ></a-box>
 
-        <!-- Target Building Marker - Increased scale and height -->
-        <a-entity
-            gps-entity-place="latitude: YOUR_LATITUDE; longitude: YOUR_LONGITUDE;"
-        >
-            <!-- Larger red box positioned 20 meters up -->
-            <a-box
-                color="red"
-                scale="100 100 100"
-                position="0 20 0"
-                animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true"
-            ></a-box>
-            
-            <!-- Added a vertical line for better visibility -->
-            <a-box
-                color="yellow"
-                scale="5 40 5"
-                position="0 10 0"
-            ></a-box>
-            
-            <!-- Larger text positioned above the box -->
-            <a-text
-                value="Target Building"
-                scale="100 100 100"
-                position="0 40 0"
-                align="center"
-                color="white"
-            ></a-text>
-        </a-entity>
+      <!-- Camera Setup -->
+      <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
-
-    <!-- Previous JavaScript remains the same -->
-    <script>
-        // Initialize map and variables
-        let map;
-        let userMarker;
-        let targetMarker;
-        let userPosition = null;
-        const TARGET_LAT = 53.8229;  // Replace with your building's latitude
-        const TARGET_LON = -1.5791; // Replace with your building's longitude
-
-        function initMap() {
-            map = L.map('map').setView([TARGET_LAT, TARGET_LON], 17);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-
-            // Add target building marker
-            targetMarker = L.marker([TARGET_LAT, TARGET_LON], {
-                icon: L.divIcon({
-                    className: 'target-marker',
-                    html: '🎯',
-                    iconSize: [30, 30]
-                })
-            }).addTo(map);
-            targetMarker.bindPopup("Target Building");
-
-            // Initialize user position marker
-            userMarker = L.marker([0, 0], {
-                icon: L.divIcon({
-                    className: 'user-marker',
-                    html: '📍',
-                    iconSize: [30, 30]
-                })
-            });
-        }
-
-        function updateMap(position) {
-            const { latitude, longitude } = position.coords;
-            userPosition = { lat: latitude, lng: longitude };
-
-            // Update user marker
-            userMarker.setLatLng([latitude, longitude]).addTo(map);
-
-            // Center map between user and target
-            const bounds = L.latLngBounds([
-                [latitude, longitude],
-                [TARGET_LAT, TARGET_LON]
-            ]);
-            map.fitBounds(bounds, { padding: [50, 50] });
-
-            // Update distance and bearing
-            const distance = calculateDistance(latitude, longitude, TARGET_LAT, TARGET_LON);
-            const bearing = calculateBearing(latitude, longitude, TARGET_LAT, TARGET_LON);
-            
-            // Update info display with more detailed information
-            document.getElementById('info-display').innerHTML = `
-                Distance to target: ${distance.toFixed(0)}m<br>
-                Direction: ${getCardinalDirection(bearing)}<br>
-                Look up to see the marker!
-            `;
-
-            // Update compass
-            updateCompass(bearing);
-        }
-
-        // Previous calculation functions remain the same
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
-
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                    Math.cos(φ1) * Math.cos(φ2) *
-                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-            return R * c;
-        }
-
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const λ1 = lon1 * Math.PI/180;
-            const λ2 = lon2 * Math.PI/180;
-
-            const y = Math.sin(λ2-λ1) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) -
-                    Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2-λ1);
-            const θ = Math.atan2(y, x);
-            
-            return (θ*180/Math.PI + 360) % 360;
-        }
-
-        function getCardinalDirection(bearing) {
-            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-            const index = Math.round(bearing / 45) % 8;
-            return directions[index];
-        }
-
-        function updateCompass(bearing) {
-            const arrow = document.getElementById('compass-arrow');
-            arrow.style.transform = `rotate(${bearing}deg)`;
-        }
-
-        // Initialize everything when the page loads
-        window.addEventListener('load', () => {
-            initMap();
-
-            if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition(updateMap, 
-                    (error) => {
-                        console.error('Error getting location:', error);
-                        document.getElementById('info-display').textContent = 
-                            'Error getting location. Please enable GPS.';
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        maximumAge: 0,
-                        timeout: 5000
-                    }
-                );
-            } else {
-                document.getElementById('info-display').textContent = 
-                    'Geolocation is not supported by your browser';
-            }
-
-            // Hide loader when scene is loaded
-            const scene = document.querySelector('a-scene');
-            scene.addEventListener('loaded', () => {
-                document.querySelector('.arjs-loader').style.display = 'none';
-            });
-        });
-    </script>
-</body>
+  </body>
 </html>
