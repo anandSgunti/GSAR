@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Geospatial WebAR Example</title>
+    <!-- Include A-Frame Library -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- Include AR.js for A-Frame -->
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.0.0/aframe/build/aframe-ar.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <!-- A-Frame Scene -->
+  
+    <a-scene
+  vr-mode-ui="enabled: false"
+  embedded
+  arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
+>
+  <!-- Example: Red Box at a Specific Location -->
+  <a-box
+    gps-entity-place="latitude: 37.7749; longitude: -122.4194;"
+    material="color: red;"
+    scale="1 1 1"
+  ></a-box>
+
+  <!-- Example: Text Label at Another Location -->
+  <a-text
+    gps-entity-place="latitude: 53.8230; longitude: -1.5791;"
+    value="Hello, Mednet!"
+    scale="5 5 5"
+  ></a-text>
+</a-scene>
+  </body>
+</html>
