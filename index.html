@@ -3,27 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Geospatial WebAR with Red Box</title>
-    <!-- Include A-Frame Library -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- Include AR.js for A-Frame -->
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.0.0/aframe/build/aframe-ar.js"></script>
+    <title>GeoAR.js demo</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@1.0.0/dist/aframe-look-at-component.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
   </head>
-  <body style="margin: 0; overflow: hidden;">
+
+  <body>
     <a-scene
       vr-mode-ui="enabled: false"
-      embedded
-      arjs="sourceType: webcam; debugUIEnabled: false;"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
     >
-      <!-- Red Box at a Specific Location -->
-      <a-box
-        gps-entity-place="latitude: 53.823089356176666; longitude:  -1.578970486767208;"
-        material="color: red;"
-        scale="1 1 1"
-      ></a-box>
-
-      <!-- Camera Setup -->
-      <a-camera gps-camera rotation-reader></a-camera>
+      <a-text
+        value="This content will always face you."
+        look-at="[gps-camera]"
+        scale="120 120 120"
+        gps-entity-place="latitude: 53.82309893; longitude: -1.579156441;"
+      ></a-text>
+      <a-camera gps-camera rotation-reader> </a-camera>
     </a-scene>
   </body>
 </html>
